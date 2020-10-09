@@ -18,6 +18,27 @@ const int p_igniterDetector 15
 #define MAXCLK  6
 #define ID "C-"
 
+//Global Variables
+int16_t packetnum = 0;
+unsigned short interrupt = 0;
+
+// Command codes
+#define ARM "ARM"
+#define FIRE "FIRE"
+#define ESTOP "ESTOP"
+
+bool acking = false;
+bool igniterrun = false;
+bool EmergencyStop = false;
+
+enum State{Idle, PreBurnWait, MainBurnWait}state;
+#define durationMillis_preBurn (10 * 1000)
+#define durationMillis_mainBurn (17 * 1000)
+unsigned long startTimeMillis;
+
+Adafruit_MAX31855 thermocouple(MAXCLK, MAXCS, MAXDO);
+
+
 elapsedMillis timeElapsed;
 
 void setup() {
@@ -142,4 +163,10 @@ void sendMessage(String receiverID, String msg) {
   {
     Serial.println("No reply, is there a listener around?");
   }
+}
+
+void efun(){
+  Serial.println("Emergency stop")
+  digitalWrite(igniter, HIGH)
+  go_to_start()
 }
