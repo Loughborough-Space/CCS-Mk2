@@ -210,8 +210,15 @@ String getMessage() {
 }
 
 
-void sendMessage(String receiverID, String msg) {
+void sendMessage(String receiverID, String msg, boolean isData = true) {
 //void sendMessage() {
+//create an if else or a function for a specific send message
+if(isData){
+  //Send data message
+}
+else{
+  //Send regular message
+}
   Serial.println("Sending to rf95_server");
   String message = receiverID + msg;
   char radiopacket[50];
