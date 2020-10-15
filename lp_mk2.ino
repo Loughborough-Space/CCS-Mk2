@@ -49,38 +49,45 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  String msg = "" //This has to be a packet of this type 
-  //std::map<std::string, std::string> m;
+  String msg = "" 
    if (rf95.available()) {
     msg = getMessage();
     if(msg.substring(0,sizeof(ID)-1) == ID) { // If starts with id e.g. .substring(0,2) == "C-" checks if 1st 2 letters match
      if(msg.substring(sizeof(ID)-1,2 + sizeof(FIRE)-1) == FIRE) {
           Serial.println("\""  FIRE  "\" was sent to \""  ID  "\"(that's me!)");
-          
+          sendMessage("id", "FIRE")
           if(igniterrun == false){
             //igniterFun();
             igniterFun_part1();
             startTimeMillis = millis(); // set start time for 4s wait reference
             state = PreBurnWait;
             Serial.println("     About to go to PreBurnWait");
+            sendMessage(something) //Gotta adjust the send message function
           }
           igniterrun = true;
         } else {
           Serial.println("\""  FIRE  "\" check failed");
+          //sendMessage()
           Serial.println("Got this instead: " + msg);
+          //sendMessage()        
         } 
          if(msg.substring(sizeof(ID)-1,2 + sizeof(ESTOP)-1) == ESTOP) {
           Serial.println("\""  ESTOP  "\" was sent to \""  ID  "\"(that's me!)");
+          //sendMessage()
           //eFun(); // called when a wait state is broken out of below based on EmergencyStop flag
           EmergencyStop = true;
         } else {
           Serial.println("\""  ESTOP  "\" check failed");
+          //sendMessage()
           Serial.println("Got this instead: " + msg);
+          //sendMessage()
         } 
       }
     } else {
       Serial.println("\""  ID  "\" check failed");
+      //sendMessage()
       Serial.println("Got this instead: " + msg);
+      //sendMessage()  
     }
 
 //    if (acking) {
@@ -88,7 +95,7 @@ void loop() {
 //    }else {
 //      sendMessage("C-", "T-" + String(thermocouple.readCelsius()));
 //    }
-    sendMessage("C-", "T-" + String(thermocouple.readCelsius()));
+    sendMessage("C-","", true, thermocouple.readCelsius(), transducer.readPsi(), loadCell.readLoad());
   }
 
   switch(state) {
@@ -136,7 +143,7 @@ void loop() {
       // defult statements
       ;
   }
-}
+}2
 
 }
 
@@ -210,17 +217,25 @@ String getMessage() {
 }
 
 
-void sendMessage(String receiverID, String msg, boolean isData = true) {
+void sendMessage(String receiverID, String msg, boolean isData, float temp = 0, float pressure = 0, float load = 0) {
 //void sendMessage() {
 //create an if else or a function for a specific send message
 if(isData){
-  //Send data message
+  /*  sendMessage("Identifiable number",
+    "TEMP:"+String(thermocouple.readCelsius())+"~"+
+    "PRESSURE"+String(loadCell.readLoad())+"~"+
+    "LOAD:"+String(transducer.readPsi()) + "#"
+    ));*/
+    msg = "TEMP:"+String(temp)+"~"+
+    "PRESSURE"+String(pressure)+"~"+
+    "LOAD:"+String(load) + "#"
+     
+  String message = "<ALT:LP:CC> + msg"
 }
 else{
-  //Send regular message
+  String message = "<DAT:LP:CC> + msg"
 }
   Serial.println("Sending to rf95_server");
-  String message = receiverID + msg;
   char radiopacket[50];
   strncpy(radiopacket, message.c_str(), 50);//**** 3rd url
   
@@ -262,6 +277,7 @@ else{
 
 void efun(){
   Serial.println("Emergency stop")
+  //sendMessage("LP","Emergency stop",false)
   digitalWrite(igniter, HIGH)
   go_to_start()
 }
