@@ -9,7 +9,7 @@ RH_RF95 rf95(RFM95_CS, RFM95_INT);
 #define MAXDO   8
 #define MAXCS   7
 #define MAXCLK  6
-#define ID "C-"
+#define ID "LP"
 
 int16_t packetnum = 0;
 unsigned short interrupt = 0;
@@ -52,68 +52,69 @@ void initTransceiver() {
 
 void sendMessage(String receiverID, String msg) {
 //void sendMessage() {
-  Serial.println("Sending to rf95_server");
-  String message = receiverID + msg;
-  char radiopacket[50];
-  strncpy(radiopacket, message.c_str(), 50);//**** 3rd url
-  
-  itoa(packetnum++, radiopacket+13, 10);
-  Serial.print("Sending "); Serial.println(radiopacket);
-  radiopacket[49] = 0;
-  
-  
-  Serial.println("Sending..."); delay(10);
-  rf95.send((uint8_t *)radiopacket, 50);
- 
-  Serial.println("Waiting for packet to complete..."); delay(10);
-  rf95.waitPacketSent();
-  // Now wait for a reply
-  uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
-  uint8_t len = sizeof(buf);
- 
-  Serial.println("Waiting for reply..."); delay(10);
-  if (rf95.waitAvailableTimeout(1000))
-  { 
-    // Should be a reply message for us now   
-    if (rf95.recv(buf, &len))
-    {
-      Serial.print("Got reply: ");
-      Serial.println((char*)buf);
-      Serial.print("RSSI: ");
-      Serial.println(rf95.lastRssi(), DEC);    
+    Serial.println("Sending to rf95_server");
+    String message = receiverID + msg;
+    char radiopacket[50];
+    strncpy(radiopacket, message.c_str(), 50);//**** 3rd url
+    
+    itoa(packetnum++, radiopacket+13, 10);
+    Serial.print("Sending "); Serial.println(radiopacket);
+    radiopacket[49] = 0;
+    
+    
+    Serial.println("Sending..."); delay(10);
+    rf95.send((uint8_t *)radiopacket, 50);
+   
+    Serial.println("Waiting for packet to complete..."); delay(10);
+    rf95.waitPacketSent();
+    // Now wait for a reply
+    uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+    uint8_t len = sizeof(buf);
+   
+    Serial.println("Waiting for reply..."); delay(10);
+    if (rf95.waitAvailableTimeout(1000))
+    { 
+      // Should be a reply message for us now   
+      if (rf95.recv(buf, &len))
+      {
+        Serial.print("Got reply: ");
+        Serial.println((char*)buf);
+        Serial.print("RSSI: ");
+        Serial.println(rf95.lastRssi(), DEC);    
+      }
+      else
+      {
+        Serial.println("Receive failed");
+      }
     }
     else
     {
-      Serial.println("Receive failed");
+      Serial.println("No reply, is there a listener around?");
     }
-  }
-  else
-  {
-    Serial.println("No reply, is there a listener around?");
-  }
 }
 
 
 String getMessage() {
-    // Should be a message for us now   
+  if (rf95.available()) {
     uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
     uint8_t len = sizeof(buf);
-    
+  
     if (rf95.recv(buf, &len))
     {
-      //RH_RF95::printBuffer("Received: ", buf, len); // suppresed/commented out printing binary info
-      //Serial.println("Got: " + (char*)buf); // suppresed/commented out message received
-      // Serial.print("RSSI: "); Serial.println(rf95.lastRssi(), DEC); // suppresed/commented out Received Signal Strength Indicator
-
-      return (char*)buf;
+      if(msg.substring(0,sizeof(ID)-1) == ID) {
+        return (char*)buf;
+      } else {
+        Serial.println("! ID Check Failed.  Got: "+ msg.substring(0,sizeof(ID)-1));
+      }
       
       // Send a reply
       uint8_t data[] = "Message received";
       rf95.send(data, sizeof(data));
       rf95.waitPacketSent();
       Serial.println("Sent a reply");
-    }else {
+    } else {
       Serial.println("Receive failed");
       return "-1";
     }
+  }
 }
