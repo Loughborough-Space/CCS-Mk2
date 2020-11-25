@@ -1,15 +1,15 @@
 #include <RH_RF95.h>
 
-#define RFM95_CS 5
-#define RFM95_RST 4 
+#define RFM95_CS 5 // Arduino PIN connected to LoRa Module 'CS'
+#define RFM95_RST 4 // Arduino PIN connected to LoRa Module 'RST'
 #define RFM95_INT 3
-#define RF95_FREQ 868.0
+#define RF95_FREQ 868.0 // Frequency (MHz) of LoRa Module
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
 #define RH_RF95_MAX_MESSAGE_LEN 300
 #define MAXDO   8
 #define MAXCS   7
 #define MAXCLK  6
-#define ID "LP"
+#define ID "LP" // Unique identifier of the packet sender
 
 int16_t packetnum = 0;
 unsigned short interrupt = 0;
