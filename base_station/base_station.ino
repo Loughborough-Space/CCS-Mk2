@@ -1,5 +1,5 @@
-// Chimera Control System - BASE (v1.0)
-// Created by : Theo Ajuyah, Jack Kent, #ADD THE REST#
+// Chimera Control System - BASE STATION (v1.0)
+// Created by : Theo Ajuyah, Jack Kent, Sharar Khondker, et al.
 
 // RF Code Courtesy: https://learn.adafruit.com/adafruit-rfm69hcw-and-rfm96-rfm95-rfm98-lora-packet-padio-breakouts/rfm9x-test
 // LCD Wiring Courtesy: https://www.arduino.cc/en/Tutorial/HelloWorld
@@ -15,18 +15,17 @@
 #define RFM95_CS 4
 #define RFM95_RST 3
 #define RFM95_INT 2 // G0
-#define ID "C-"
-#define ARM_ACK "ARMACK"
-#define FIRE_ACK "FIREACK"
+#define ID "B-" // LoRa ID,
+#define ARM_ACK "ARMACK" // Arm command acknowledgement message
+#define FIRE_ACK "FIREACK" // Arm command acknowledgement message
 
 // Switch Pins:
 const int armSwitchPin = 20;
 const int fireSwitchPin = 21;
 const int estopButtonPin = 29;
 
-
 #define RF95_FREQ 868.0 // 718 lowest frequency that is working- tested
- 
+
 // Singleton instance of the radio driver
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
 #define RH_RF95_MAX_MESSAGE_LEN 300
@@ -60,24 +59,24 @@ void setup() {
   armStatus = digitalRead(armSwitchPin);
   disarmStatus = !(digitalRead(armSwitchPin));
   fireStatus = digitalRead(fireSwitchPin);
-  //estopStatus = digitalRead(estopButtonPin); // Not required if usinghardware interrupt for estop switch
+  //estopStatus = digitalRead(estopButtonPin); // Not required if using hardware interrupt for estop switch
 
   Serial.println("CCS - HOUSTON");
   Serial.println("RADIO STARTING...");
-  if(init_transmitter()) {
+  if (init_transmitter()) {
     delay(500);
     Serial.println("CHIMERA CONTROL READY");
   }
 }
- 
+
 
 void loop()
 {
   armStatus = digitalRead(armSwitchPin);
   disarmStatus = !digitalRead(armSwitchPin);
   fireStatus = digitalRead(fireSwitchPin);
-  //estopStatus = digitalRead(estopButtonPin); // Not required if usinghardware interrupt for estop switch
-  
+  //estopStatus = digitalRead(estopButtonPin); // Not required if using hardware interrupt for estop switch
+
   Serial.print("ARM STATUS: ");
   Serial.print(armStatus);
   Serial.print(" DISARM STATUS: ");
@@ -86,7 +85,7 @@ void loop()
   Serial.print(fireStatus);
   Serial.print(" ESTOP STATUS: ");
   Serial.println(estopStatus);
-  
+
   if (estopStatus || emergencyStopped) {
     //estop(); // Not required if usinghardware interrupt for estop switch
     //emergencyStopped = 1; // Not required if usinghardware interrupt for estop switch
@@ -112,27 +111,27 @@ bool init_transmitter() {
   bool radioReady = 1;
   pinMode(RFM95_RST, OUTPUT);
   digitalWrite(RFM95_RST, HIGH);
-   
+
   while (!Serial);
-  
+
   delay(100);
- 
+
   Serial.println("Arduino LoRa TX Test!");
- 
+
   // Manual reset
   digitalWrite(RFM95_RST, LOW);
   delay(10);
   digitalWrite(RFM95_RST, HIGH);
   delay(10);
- 
+
   while (!rf95.init()) {
     Serial.println("LoRa radio init failed");
     radioReady = 0;
     while (1);
   }
-  
+
   Serial.println("LoRa radio init OK!");
- 
+
   // Defaults after init are 434.0MHz, modulation GFSK_Rb250Fd250, +13dbM
   if (!rf95.setFrequency(RF95_FREQ)) {
     Serial.println("setFrequency failed");
@@ -140,11 +139,11 @@ bool init_transmitter() {
     while (1);
   }
   Serial.print("Set Freq to: "); Serial.println(RF95_FREQ);
-  
+
   // Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
- 
+
   // The default transmitter power is 13dBm, using PA_BOOST.
-  // If you are using RFM95/96/97/98 modules which uses the PA_BOOST transmitter pin, then 
+  // If you are using RFM95/96/97/98 modules which uses the PA_BOOST transmitter pin, then
   // you can set transmitter powers from 5 to 23 dBm:
   rf95.setTxPower(23, false);
   return radioReady;
@@ -157,27 +156,27 @@ void sendMessage(String receiverID, String msg) {
   String message = receiverID + msg;
   char radiopacket[50];
   strncpy(radiopacket, message.c_str(), 50);//**** 3rd url
-  
-  itoa(packetnum++, radiopacket+13, 10);
+
+  itoa(packetnum++, radiopacket + 13, 10);
   Serial.print("Sending "); Serial.println(radiopacket);
   radiopacket[49] = 0;
-  
-  
+
+
   Serial.println("Sending..."); delay(10);
   rf95.send((uint8_t *)radiopacket, 50);
- 
+
   Serial.println("Waiting for packet to complete..."); delay(10);
   rf95.waitPacketSent();
   // Now wait for a reply
   uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
   uint8_t len = sizeof(buf);
- 
+
   Serial.println("Waiting for reply..."); delay(10);
   if (rf95.waitAvailableTimeout(1000))
-  { 
-    // Should be a reply message for us now   
+  {
+    // Should be a reply message for us now
     if (rf95.recv(buf, &len))
-   {
+    {
       Serial.print("Got reply: ");
       Serial.println((char*)buf);
       Serial.print("RSSI: ");
@@ -202,11 +201,6 @@ void arm() {
 }
 
 
-void disarm() {
-  Serial.println("disarm");
-}
-
-
 void fire() {
   Serial.println("SENDING FIRE COMMAND");
   sendMessage("C-", "FIRE");
@@ -222,25 +216,25 @@ void estop() {
 
 // In use: Only called if `if (rf95.available()) {}` statement passes, so is guaranteed to have a message
 String getMessage() {
-    // Should be a message for us now   
-    uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
-    uint8_t len = sizeof(buf);
-    
-    if (rf95.recv(buf, &len))
-    {
-      //RH_RF95::printBuffer("Received: ", buf, len); // suppresed/commented out printing binary info
-      //Serial.println("Got: " + (char*)buf); // suppresed/commented out message received
-      // Serial.print("RSSI: "); Serial.println(rf95.lastRssi(), DEC); // suppresed/commented out Received Signal Strength Indicator
+  // Should be a message for us now
+  uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+  uint8_t len = sizeof(buf);
 
-      return (char*)buf;
-      
-      // Send a reply
-      uint8_t data[] = "Message received";
-      rf95.send(data, sizeof(data));
-      rf95.waitPacketSent();
-      Serial.println("Sent a reply");
-    }else {
-      Serial.println("Receive failed");
-      return "-1";
-    }
+  if (rf95.recv(buf, &len))
+  {
+    //RH_RF95::printBuffer("Received: ", buf, len); // suppresed/commented out printing binary info
+    //Serial.println("Got: " + (char*)buf); // suppresed/commented out message received
+    // Serial.print("RSSI: "); Serial.println(rf95.lastRssi(), DEC); // suppresed/commented out Received Signal Strength Indicator
+
+    return (char*)buf;
+
+    // Send a reply
+    uint8_t data[] = "Message received";
+    rf95.send(data, sizeof(data));
+    rf95.waitPacketSent();
+    Serial.println("Sent a reply");
+  } else {
+    Serial.println("Receive failed");
+    return "-1";
+  }
 }
